@@ -1,6 +1,5 @@
 package com.github.slofurno.basechat;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -20,6 +19,7 @@ import com.squareup.otto.Subscribe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ChatService extends Service {
     int mStartMode;       // indicates how to behave if the service is killed
@@ -79,7 +79,27 @@ public class ChatService extends Service {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
 
-                ChatMessage message = new ChatMessage("name", snapshot.getValue().toString());
+                Object value = snapshot.getValue();
+
+                String name = "name";
+                String msg = "";
+
+                if (value instanceof Map) {
+                    Object n = ((Map) value).get("name");
+                    Object m = ((Map) value).get("message");
+
+                    if (n !=null){
+                        name = n.toString();
+                    }
+                    if (m!=null){
+                        msg = m.toString();
+                    }
+
+                } else if (value instanceof String) {
+                    msg=value.toString();
+                }
+
+                ChatMessage message = new ChatMessage(name, msg);
                 List<ChatMessage> m = new ArrayList<ChatMessage>();
 
                 messageStore.add(message);
@@ -115,8 +135,8 @@ public class ChatService extends Service {
 
     @Produce
     public ReceiveMessageEvent getExistingMessages() {
-
-        numMessages = 0;
+        numMessages=0;
+        updateNotification();
 
         List<ChatMessage> m = new ArrayList<ChatMessage>();
         for(ChatMessage message : messageStore){
@@ -131,14 +151,11 @@ public class ChatService extends Service {
 
         Firebase push = messages.push();
 
-        push.setValue(event.getMessage().Message);
+        push.setValue(event.getMessage());
 
     }
 
-    @Subscribe
-    public void updateNotification(DeadEvent event){
-
-        numMessages++;
+    public void updateNotification(){
         NotificationCompat.InboxStyle nextInboxStyle =
                 new NotificationCompat.InboxStyle(mNotifyBuilder);
 
@@ -148,13 +165,20 @@ public class ChatService extends Service {
         int lastMessage = messageStore.size()-1;
 
         for(int i = 0; i<5 && i<numMessages;i++ ){
-            nextInboxStyle.addLine(messageStore.get(lastMessage-i).Message);
+            ChatMessage m = messageStore.get(lastMessage - i);
+            nextInboxStyle.addLine(m.toString());
         }
 
         mNotificationManager.notify(
                 555,
                 nextInboxStyle.build());
+    }
 
+    @Subscribe
+    public void updateNotification(DeadEvent event){
+
+        numMessages++;
+        updateNotification();
     }
 
     @Override

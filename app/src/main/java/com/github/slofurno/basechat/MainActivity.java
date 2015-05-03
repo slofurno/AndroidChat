@@ -19,25 +19,26 @@ import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
-    ArrayAdapter<String> messageAdapter;
-    LinkedList<String> messageStack;
+    ArrayAdapter<ChatMessage> messageAdapter;
+    LinkedList<ChatMessage> messageStack;
     Bus bus;
+    String loginName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+        loginName = intent.getStringExtra("loginName");
+
         setContentView(R.layout.activity_main);
 
         bus = OttoBus.getInstance().getBus();
 
 
-        messageStack = new LinkedList<String>();
+        messageStack = new LinkedList<ChatMessage>();
 
-        List<String> messages = new ArrayList<String>();
-        messages.add("test message");
-        messages.add("hi");
-
-        messageAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, messageStack);
+        messageAdapter = new ArrayAdapter<ChatMessage>(this, android.R.layout.simple_list_item_1, messageStack);
 
         ListView listView = (ListView) findViewById(R.id.messagelist);
         listView.setAdapter(messageAdapter);
@@ -71,11 +72,11 @@ public class MainActivity extends ActionBarActivity {
 
     @Override protected void onResume() {
 
-
-        StartConnect();
+        //StartConnect();
         // Register ourselves so that we can provide the initial value.
         OttoBus.getInstance().getBus().register(this);
         super.onResume();
+
     }
 
     @Override protected void onPause() {
@@ -85,27 +86,39 @@ public class MainActivity extends ActionBarActivity {
         super.onPause();
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+
+        savedInstanceState.putString("loginName",loginName);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        loginName = savedInstanceState.getString("loginName");
+    }
+
     @Subscribe
-    public void putUserAccountResult(ReceiveMessageEvent event){
+    public void getMessage(ReceiveMessageEvent event){
         for (ChatMessage message : event.getMessages()){
-            messageStack.addFirst(message.Message);
-            messageAdapter.notifyDataSetChanged();
-           // messageAdapter.add(message.Message);
+            messageStack.addFirst(message);
         }
+        messageAdapter.notifyDataSetChanged();
     }
 
     public void StartConnect(){
 
-        Intent intent=new Intent(this, ChatService.class);
 
-        startService(intent);
 
     }
 
     public void sendMessage(View view) {
 
         EditText message = (EditText)findViewById(R.id.nextmessage);
-        bus.post(new SendMessageEvent(new ChatMessage("name", message.getText().toString())));
+        bus.post(new SendMessageEvent(new ChatMessage(loginName, message.getText().toString())));
+
+
 
     }
 }
