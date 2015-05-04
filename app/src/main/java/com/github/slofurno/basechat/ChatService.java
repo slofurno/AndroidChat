@@ -79,27 +79,19 @@ public class ChatService extends Service {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
 
-                Object value = snapshot.getValue();
 
-                String name = "name";
-                String msg = "";
-
-                if (value instanceof Map) {
-                    Object n = ((Map) value).get("name");
-                    Object m = ((Map) value).get("message");
-
-                    if (n !=null){
-                        name = n.toString();
-                    }
-                    if (m!=null){
-                        msg = m.toString();
-                    }
-
-                } else if (value instanceof String) {
-                    msg=value.toString();
+                ChatMessage message=null;
+                try {
+                    message = snapshot.getValue(ChatMessage.class);
+                }
+                catch (Exception e){
+                    System.out.println(snapshot.getValue().toString());
                 }
 
-                ChatMessage message = new ChatMessage(name, msg);
+                if (message==null){
+                    return;
+                }
+
                 List<ChatMessage> m = new ArrayList<ChatMessage>();
 
                 messageStore.add(message);

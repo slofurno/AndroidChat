@@ -4,12 +4,22 @@ package com.github.slofurno.basechat;
  * Created by slofurno on 5/1/2015.
  */
 public class ChatMessage {
-    public String name;
-    public String message;
+    private String name;
+    private String message;
 
-    public ChatMessage(String sender, String message){
+    private ChatMessage(){}
+
+    public ChatMessage(String name, String message){
         this.message =message;
-        this.name =sender;
+        this.name =name;
+    }
+
+    public String getName(){
+        return name;
+    }
+
+    public String getMessage(){
+        return message;
     }
 
     public String toString(){
